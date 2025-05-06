@@ -25,10 +25,14 @@ public class StockPermanceController {
         this.stockPerformanceService = stockPerformanceService;
     }
 
-    @GetMapping("/client/{clientId}")
-    public ResponseEntity<List<StockPerformanceDto>> getStockDetails(@PathVariable String clientId) {
+    @GetMapping("/clients/{clientIds}")
+    public ResponseEntity<List<StockPerformanceDto>> getStockDetails(@PathVariable String clientIds) {
 
-        List<StockPerformanceDto> stockDtoList= stockPerformanceService.getStockDetails(clientId);
+        List<String> clientIdList = clientIds.contains(",")
+                ? List.of(clientIds.split(","))
+                : List.of(clientIds);
+
+        List<StockPerformanceDto> stockDtoList = stockPerformanceService.getStockDetails(clientIdList);
         return ResponseEntity.ok(stockDtoList);
     }
 }

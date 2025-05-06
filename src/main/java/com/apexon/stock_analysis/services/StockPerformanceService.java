@@ -1,6 +1,7 @@
 package com.apexon.stock_analysis.services;
 
 
+import com.apexon.stock_analysis.MockDataUtil;
 import com.apexon.stock_analysis.dto.StockPerformanceDto;
 import com.apexon.stock_analysis.dto.TradeDto;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -24,6 +25,7 @@ public class StockPerformanceService {
 
     @Value("${trade.api.path}")
     private String tradeApiPath;
+
     @Autowired
     public StockPerformanceService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
@@ -35,113 +37,48 @@ public class StockPerformanceService {
 
     }*/
 
-    public List<StockPerformanceDto> getStockDetails(String clientId) {
-        String mockJson = "[\n" +
-                "  {\n" +
-                "    \"clientId\": 12345,\n" +
-                "    \"stockSymbol\": \"IBM\",\n" +
-                "    \"orderType\": \"LIMIT\",\n" +
-                "    \"quantity\": 100,\n" +
-                "    \"price\": 145.3,\n" +
-                "    \"timeInForce\": \"GTC\",\n" +
-                "    \"status\": \"EXECUTED\",\n" +
-                "    \"transactionType\": \"BUY\"\n" +
-                "  },\n" +
-                "  {\n" +
-                "    \"clientId\": 12346,\n" +
-                "    \"stockSymbol\": \"GOOGL\",\n" +
-                "    \"orderType\": \"MARKET\",\n" +
-                "    \"quantity\": 50,\n" +
-                "    \"price\": 2725.5,\n" +
-                "    \"timeInForce\": \"DAY\",\n" +
-                "    \"status\": \"REQUEST\",\n" +
-                "    \"transactionType\": \"SELL\"\n" +
-                "  },\n" +
-                "  {\n" +
-                "    \"clientId\": 12347,\n" +
-                "    \"stockSymbol\": \"AMZN\",\n" +
-                "    \"orderType\": \"LIMIT\",\n" +
-                "    \"quantity\": 30,\n" +
-                "    \"price\": 3450.2,\n" +
-                "    \"timeInForce\": \"DAY\",\n" +
-                "    \"status\": \"CANCELLED\",\n" +
-                "    \"transactionType\": \"BUY\"\n" +
-                "  },\n" +
-                "  {\n" +
-                "    \"clientId\": 12348,\n" +
-                "    \"stockSymbol\": \"TSLA\",\n" +
-                "    \"orderType\": \"LIMIT\",\n" +
-                "    \"quantity\": 200,\n" +
-                "    \"price\": 720.8,\n" +
-                "    \"timeInForce\": \"GTC\",\n" +
-                "    \"status\": \"EXECUTED\",\n" +
-                "    \"transactionType\": \"SELL\"\n" +
-                "  },\n" +
-                "  {\n" +
-                "    \"clientId\": 12349,\n" +
-                "    \"stockSymbol\": \"MSFT\",\n" +
-                "    \"orderType\": \"MARKET\",\n" +
-                "    \"quantity\": 150,\n" +
-                "    \"price\": 299.9,\n" +
-                "    \"timeInForce\": \"DAY\",\n" +
-                "    \"status\": \"REQUEST\",\n" +
-                "    \"transactionType\": \"BUY\"\n" +
-                "  }\n" +
-                "]";
+    public List<StockPerformanceDto> getStockDetails(List<String> clientIds) {
 
-        String mockMarketData = "{\n" +
-                "    \"Meta Data\": {\n" +
-                "        \"1. Information\": \"Daily Prices (open, high, low, close) and Volumes\",\n" +
-                "        \"2. Symbol\": \"IBM\",\n" +
-                "        \"3. Last Refreshed\": \"2025-04-29\",\n" +
-                "        \"4. Output Size\": \"Compact\",\n" +
-                "        \"5. Time Zone\": \"US/Eastern\"\n" +
-                "    },\n" +
-                "    \"Time Series (Daily)\": {\n" +
-                "        \"2025-04-29\": {\n" +
-                "            \"1. open\": \"237.0000\",\n" +
-                "            \"2. high\": \"239.9800\",\n" +
-                "            \"3. low\": \"236.1400\",\n" +
-                "            \"4. close\": \"239.3900\",\n" +
-                "            \"5. volume\": \"3426508\"\n" +
-                "        },\n" +
-                "        \"2025-04-28\": {\n" +
-                "            \"1. open\": \"232.8600\",\n" +
-                "            \"2. high\": \"236.6300\",\n" +
-                "            \"3. low\": \"232.0700\",\n" +
-                "            \"4. close\": \"236.1600\",\n" +
-                "            \"5. volume\": \"3653461\"\n" +
-                "        }\n" +
-                "    }\n" +
-                "}";
+        String mockTradeJson = MockDataUtil.getTradeMockJson();
+        List<String> mockMarketDataList = MockDataUtil.getMockMarketDataList();
 
         ObjectMapper objectMapper = new ObjectMapper();
         List<StockPerformanceDto> stockPerformanceList = new ArrayList<>();
         try {
-            List<TradeDto> trades = objectMapper.readValue(mockJson, new TypeReference<List<TradeDto>>() {});
-            JsonNode marketDataNode = objectMapper.readTree(mockMarketData).path("Time Series (Daily)").path("2025-04-29");
-
-            double currentPrice = Double.parseDouble(marketDataNode.path("4. close").asText());
-
+            List<TradeDto> trades = objectMapper.readValue(mockTradeJson, new TypeReference<List<TradeDto>>() {
+            });
             for (TradeDto trade : trades) {
-                    double totalInvestment = trade.getPrice() * trade.getQuantity();
-                    double currentValue = currentPrice * trade.getQuantity();
-                    double profitLoss = currentValue - totalInvestment;
-                    double profitLossPercentage = (profitLoss / totalInvestment) * 100;
+                if (clientIds.contains(String.valueOf(trade.getClientId()))) {
+                    for (String marketDataJson : mockMarketDataList) {
+                        JsonNode rootNode = objectMapper.readTree(marketDataJson);
+                        String marketSymbol = rootNode.path("Meta Data").path("2. Symbol").asText();
 
-                    StockPerformanceDto stockPerformanceDto = StockPerformanceDto.builder()
-                            .symbol(trade.getStockSymbol())
-                            .currentPrice(currentPrice)
-                            .averagePurchasePrice(trade.getPrice())
-                            .sharesOwned(trade.getQuantity())
-                            .totalInvestment(totalInvestment)
-                            .currentValue(currentValue)
-                            .profitLoss(profitLoss)
-                            .profitLossPercentage(profitLossPercentage)
-                            .build();
+                        if (trade.getStockSymbol().equalsIgnoreCase(marketSymbol)) {
+                            JsonNode marketDataNode = rootNode.path("Time Series (Daily)").path("2025-04-29");
+                            double currentPrice = Double.parseDouble(marketDataNode.path("4. close").asText());
 
-                    stockPerformanceList.add(stockPerformanceDto);
+                            double totalInvestment = trade.getPrice() * trade.getQuantity();
+                            double currentValue = currentPrice * trade.getQuantity();
+                            double profitLoss = currentValue - totalInvestment;
+                            double profitLossPercentage = (profitLoss / totalInvestment) * 100;
+
+                            StockPerformanceDto stockPerformanceDto = StockPerformanceDto.builder()
+                                    .symbol(trade.getStockSymbol())
+                                    .currentPrice(currentPrice)
+                                    .averagePurchasePrice(trade.getPrice())
+                                    .sharesOwned(trade.getQuantity())
+                                    .totalInvestment(totalInvestment)
+                                    .currentValue(currentValue)
+                                    .profitLoss(profitLoss)
+                                    .profitLossPercentage(profitLossPercentage)
+                                    .build();
+
+                            stockPerformanceList.add(stockPerformanceDto);
+                            break;
+                        }
+                    }
                 }
+            }
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
