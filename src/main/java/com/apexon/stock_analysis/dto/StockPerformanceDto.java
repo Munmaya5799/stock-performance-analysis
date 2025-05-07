@@ -8,7 +8,7 @@ import lombok.Data;
 public class StockPerformanceDto {
     private String symbol;
     private double currentPrice;
-    private double averagePurchasePrice;
+    private double purchasePrice;
     private int sharesOwned;
     private double totalInvestment;
     private double currentValue;

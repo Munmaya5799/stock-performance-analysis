@@ -10,12 +10,9 @@ import lombok.NoArgsConstructor;
 public class TradeDto {
     private long clientId;
     private String stockSymbol;
-    private String orderType;
     private int quantity;
     private double price;
-    private String timeInForce;
-    String status;
-    String transactionType;
+
     public TradeDto(){
 
     }

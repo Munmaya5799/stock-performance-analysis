@@ -26,13 +26,10 @@ public class StockPermanceController {
     }
 
     @GetMapping("/clients/{clientIds}")
-    public ResponseEntity<List<StockPerformanceDto>> getStockDetails(@PathVariable String clientIds) {
+    public ResponseEntity<List<StockPerformanceDto>> getStockDetails(@PathVariable String clientId) {
 
-        List<String> clientIdList = clientIds.contains(",")
-                ? List.of(clientIds.split(","))
-                : List.of(clientIds);
 
-        List<StockPerformanceDto> stockDtoList = stockPerformanceService.getStockDetails(clientIdList);
+        List<StockPerformanceDto> stockDtoList = stockPerformanceService.getStockDetails(clientId);
         return ResponseEntity.ok(stockDtoList);
     }
 }
